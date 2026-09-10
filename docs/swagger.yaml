@@ -1,0 +1,99 @@
+definitions:
+  dtos.HealthResponse:
+    properties:
+      serviceName:
+        type: string
+      status:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  dtos.UpdateProfileRequest:
+    properties:
+      displayName:
+        type: string
+      pictureUrl:
+        type: string
+    required:
+    - displayName
+    type: object
+  dtos.UserResponse:
+    properties:
+      displayName:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      pictureUrl:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: REST API for the Subglutee user service
+  title: User Service API
+  version: "1.0"
+paths:
+  /api/v1/users/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.UserResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: get my profile
+      tags:
+      - users
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: profile
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: update my profile
+      tags:
+      - users
+  /health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.HealthResponse'
+      summary: health check
+      tags:
+      - ops
+swagger: "2.0"
