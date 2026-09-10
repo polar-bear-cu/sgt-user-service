@@ -20,7 +20,7 @@ func NewUser(uc *usecases.UserUsecase) *UserController {
 const dummyUserID = "11111111-1111-1111-1111-111111111111"
 
 func (ctl *UserController) GetMe(c *gin.Context) {
-	user, err := ctl.uc.GetByID(dummyUserID)
+	user, err := ctl.uc.GetByID(c.Request.Context(), dummyUserID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -34,7 +34,7 @@ func (ctl *UserController) UpdateMe(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	user, err := ctl.uc.UpdateProfile(dummyUserID, req.DisplayName, req.PictureURL)
+	user, err := ctl.uc.UpdateProfile(c.Request.Context(), dummyUserID, req.DisplayName, req.PictureURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

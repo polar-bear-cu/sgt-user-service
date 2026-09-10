@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -17,9 +18,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+	ctx := context.Background()
+	pool, err := config.ConnectPostgres(ctx, cfg.DB.DSN())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer pool.Close()
+
 	r := gin.Default()
 
-	repo := repositories.NewInMemoryUser()
+	repo := repositories.NewUserPostgres(pool)
 	uc := usecases.NewUser(repo)
 	userCtrl := controllers.NewUser(uc)
 

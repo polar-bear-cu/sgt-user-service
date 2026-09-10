@@ -1,47 +1,44 @@
 package repositories
 
 import (
+	"context"
 	"errors"
-	"sync"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/polar-bear-cu/sgt-user-service/models"
 )
 
 var ErrUserNotFound = errors.New("user not found")
 
 type UserRepository interface {
-	FindByID(id string) (models.User, error)
-	Update(u models.User) (models.User, error)
+	FindByID(ctx context.Context, id string) (models.User, error)
+	Update(ctx context.Context, u models.User) (models.User, error)
 }
 
-type inMemoryUser struct {
-	mu    sync.Mutex
-	items map[string]models.User
+type UserPostgres struct {
+	db *pgxpool.Pool
 }
 
-func NewInMemoryUser() UserRepository {
-	r := &inMemoryUser{items: map[string]models.User{}}
-	id := "11111111-1111-1111-1111-111111111111"
-	r.items[id] = models.User{ID: id, Email: "mock1@gmail.com", DisplayName: "Mock 1"}
-	return r
+func NewUserPostgres(db *pgxpool.Pool) UserRepository {
+	return &UserPostgres{db: db}
 }
 
-func (r *inMemoryUser) FindByID(id string) (models.User, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	u, ok := r.items[id]
-	if !ok {
+func (r *UserPostgres) FindByID(ctx context.Context, id string) (models.User, error) {
+	var u models.User
+	err := r.db.QueryRow(ctx,
+		`SELECT id, email, google_sub, display_name, picture_url FROM users WHERE id = $1`, id,
+	).Scan(&u.ID, &u.Email, &u.GoogleSub, &u.DisplayName, &u.PictureURL)
+	if errors.Is(err, pgx.ErrNoRows) {
 		return models.User{}, ErrUserNotFound
 	}
-	return u, nil
+	return u, err
 }
 
-func (r *inMemoryUser) Update(u models.User) (models.User, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if _, ok := r.items[u.ID]; !ok {
-		return models.User{}, ErrUserNotFound
-	}
-	r.items[u.ID] = u
-	return u, nil
+func (r *UserPostgres) Update(ctx context.Context, u models.User) (models.User, error) {
+	_, err := r.db.Exec(ctx,
+		`UPDATE users SET display_name = $2, picture_url = $3 WHERE id = $1`,
+		u.ID, u.DisplayName, u.PictureURL,
+	)
+	return u, err
 }
