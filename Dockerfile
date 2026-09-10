@@ -9,5 +9,5 @@ FROM alpine:3.20
 RUN apk add --no-cache tzdata ca-certificates
 ENV TZ=Asia/Bangkok
 COPY --from=build /server /server
-EXPOSE 8080 50051
+EXPOSE 8080 50052
 ENTRYPOINT ["/server"]

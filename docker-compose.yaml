@@ -3,7 +3,7 @@ services:
     build: .
     ports:
       - "8082:8080"
-      - "50052:50051"
+      - "50052:50052"
     environment:
       DB_HOST: postgres
       DB_PORT: "5434"

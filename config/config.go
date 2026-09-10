@@ -25,7 +25,7 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 	cfg := &Config{
 		Port:      env("PORT", "8080"),
-		GRPCPort:  env("GRPC_PORT", "50051"),
+		GRPCPort:  env("GRPC_PORT", "50052"),
 		JWTSecret: os.Getenv("JWT_SECRET"),
 		DB: DBConfig{
 			Host:     env("DB_HOST", "localhost"),
