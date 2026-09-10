@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/polar-bear-cu/sgt-user-service/config"
 	"github.com/polar-bear-cu/sgt-user-service/controllers"
 	"github.com/polar-bear-cu/sgt-user-service/repositories"
 	"github.com/polar-bear-cu/sgt-user-service/routes"
@@ -11,6 +12,11 @@ import (
 )
 
 func main() {
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	r := gin.Default()
 
 	repo := repositories.NewInMemoryUser()
@@ -19,8 +25,8 @@ func main() {
 
 	routes.Register(r, userCtrl)
 
-	log.Println("listening :8080")
-	if err := r.Run(":8080"); err != nil {
+	log.Println("listening :" + cfg.Port)
+	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatal(err)
 	}
 }
