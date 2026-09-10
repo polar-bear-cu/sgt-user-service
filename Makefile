@@ -1,4 +1,4 @@
-DB_URL ?= postgres://postgres:postgres@localhost:5433/users?sslmode=disable
+DB_URL ?= postgres://postgres:postgres@localhost:5434/users?sslmode=disable
 
 .PHONY: run test lint format tidy compose-up compose-down migrate-up migrate-down migrate-create
 

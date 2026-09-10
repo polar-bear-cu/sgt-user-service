@@ -2,11 +2,11 @@ services:
   user-service:
     build: .
     ports:
-      - "8080:8080"
-      - "50051:50051"
+      - "8082:8080"
+      - "50052:50051"
     environment:
       DB_HOST: postgres
-      DB_PORT: "5433"
+      DB_PORT: "5434"
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_NAME: users
@@ -23,10 +23,10 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: users
-      PGPORT: 5433
+      PGPORT: 5434
       TZ: Asia/Bangkok
     ports:
-      - "5433:5433"
+      - "5434:5434"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -38,9 +38,9 @@ services:
   pgweb:
     image: sosedoff/pgweb:latest
     ports:
-      - "8081:8081"
+      - "8083:8081"
     environment:
-      PGWEB_DATABASE_URL: postgres://postgres:postgres@postgres:5433/users?sslmode=disable
+      PGWEB_DATABASE_URL: postgres://postgres:postgres@postgres:5434/users?sslmode=disable
     depends_on:
       postgres:
         condition: service_healthy
