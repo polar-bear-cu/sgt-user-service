@@ -1,6 +1,8 @@
 DB_URL ?= postgres://postgres:postgres@localhost:5434/users?sslmode=disable
+IMAGE ?= sgt-user-service
+PORT ?= 8082
 
-.PHONY: run test lint format tidy compose-up compose-down migrate-up migrate-down migrate-create
+.PHONY: run test lint format tidy docs image container compose-up compose-down migrate-up migrate-down migrate-create
 
 run:
 	swag init -g main.go -o docs --parseInternal
@@ -20,6 +22,12 @@ tidy:
 
 docs:
 	swag init -g main.go -o docs --parseInternal
+
+image:
+	docker build -t $(IMAGE) .
+
+container: image
+	docker run --rm --env-file .env -p $(PORT):8080 $(IMAGE)
 
 compose-up:
 	docker compose up -d --wait --remove-orphans
