@@ -42,3 +42,16 @@ func (s *UserServer) UpdateProfile(
 		User: &userv1.User{Id: user.ID, Email: user.Email},
 	}, nil
 }
+
+func (s *UserServer) GetUser(
+	ctx context.Context,
+	req *userv1.GetUserRequest,
+) (*userv1.GetUserResponse, error) {
+	user, err := s.uc.GetByID(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	return &userv1.GetUserResponse{
+		User: &userv1.User{Id: user.ID, Email: user.Email},
+	}, nil
+}
