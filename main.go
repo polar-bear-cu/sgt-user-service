@@ -46,7 +46,7 @@ func main() {
 	uc := usecases.NewUser(repo)
 	userCtrl := controllers.NewUser(uc)
 
-	gs, lis, err := newGRPCServer(cfg.GRPCPort, uc)
+	gs, lis, err := newGRPCServer(ctx, cfg.GRPCPort, uc)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,8 +80,9 @@ func main() {
 	gs.GracefulStop()
 }
 
-func newGRPCServer(port string, uc *usecases.UserUsecase) (*grpclib.Server, net.Listener, error) {
-	lis, err := net.Listen("tcp", ":"+port)
+func newGRPCServer(ctx context.Context, port string, uc *usecases.UserUsecase) (*grpclib.Server, net.Listener, error) {
+	var lc net.ListenConfig
+	lis, err := lc.Listen(ctx, "tcp", ":"+port)
 	if err != nil {
 		return nil, nil, err
 	}
