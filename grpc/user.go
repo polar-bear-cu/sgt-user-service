@@ -4,6 +4,7 @@ import (
 	"context"
 
 	userv1 "github.com/polar-bear-cu/sgt-proto/gen/go/user/v1"
+	"github.com/polar-bear-cu/sgt-user-service/models"
 	"github.com/polar-bear-cu/sgt-user-service/usecases"
 )
 
@@ -20,12 +21,12 @@ func (s *UserServer) FindOrCreateUser(
 	ctx context.Context,
 	req *userv1.FindOrCreateUserRequest,
 ) (*userv1.FindOrCreateUserResponse, error) {
-	user, created, err := s.uc.FindOrCreate(ctx, req.GetEmail(), req.GetGoogleSub())
+	user, created, err := s.uc.FindOrCreate(ctx, req.GetEmail(), req.GetGoogleSub(), req.GetName(), req.GetPictureUrl())
 	if err != nil {
 		return nil, err
 	}
 	return &userv1.FindOrCreateUserResponse{
-		User:    &userv1.User{Id: user.ID, Email: user.Email},
+		User:    toProto(user),
 		Created: created,
 	}, nil
 }
@@ -39,7 +40,7 @@ func (s *UserServer) UpdateProfile(
 		return nil, err
 	}
 	return &userv1.UpdateProfileResponse{
-		User: &userv1.User{Id: user.ID, Email: user.Email},
+		User: toProto(user),
 	}, nil
 }
 
@@ -52,6 +53,15 @@ func (s *UserServer) GetUser(
 		return nil, err
 	}
 	return &userv1.GetUserResponse{
-		User: &userv1.User{Id: user.ID, Email: user.Email},
+		User: toProto(user),
 	}, nil
+}
+
+func toProto(u models.User) *userv1.User {
+	return &userv1.User{
+		Id:         u.ID,
+		Email:      u.Email,
+		Name:       u.DisplayName,
+		PictureUrl: u.PictureURL,
+	}
 }
