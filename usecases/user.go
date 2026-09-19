@@ -8,6 +8,8 @@ import (
 	"github.com/polar-bear-cu/sgt-user-service/repositories"
 )
 
+var ErrForbidden = errors.New("admin only")
+
 type UserUsecase struct {
 	repo repositories.UserRepository
 }
@@ -52,4 +54,47 @@ func (u *UserUsecase) FindOrCreate(
 		return models.User{}, false, err
 	}
 	return created, true, nil
+}
+
+func (u *UserUsecase) DeleteSelf(ctx context.Context, callerID string) error {
+	return u.repo.Delete(ctx, callerID)
+}
+
+func (u *UserUsecase) requireAdmin(ctx context.Context, callerID string) error {
+	caller, err := u.repo.FindByID(ctx, callerID)
+	if err != nil {
+		return err
+	}
+	if caller.Role != models.RoleAdmin {
+		return ErrForbidden
+	}
+	return nil
+}
+
+func (u *UserUsecase) GetAll(ctx context.Context, callerID string, limit, offset int) ([]models.User, error) {
+	if err := u.requireAdmin(ctx, callerID); err != nil {
+		return nil, err
+	}
+	return u.repo.FindAll(ctx, limit, offset)
+}
+
+func (u *UserUsecase) GetByIDAsAdmin(ctx context.Context, callerID, targetID string) (models.User, error) {
+	if err := u.requireAdmin(ctx, callerID); err != nil {
+		return models.User{}, err
+	}
+	return u.repo.FindByID(ctx, targetID)
+}
+
+func (u *UserUsecase) UpdateRole(ctx context.Context, callerID, targetID, role string) (models.User, error) {
+	if err := u.requireAdmin(ctx, callerID); err != nil {
+		return models.User{}, err
+	}
+	return u.repo.UpdateRole(ctx, targetID, role)
+}
+
+func (u *UserUsecase) DeleteUser(ctx context.Context, callerID, targetID string) error {
+	if err := u.requireAdmin(ctx, callerID); err != nil {
+		return err
+	}
+	return u.repo.Delete(ctx, targetID)
 }
