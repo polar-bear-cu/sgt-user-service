@@ -76,8 +76,8 @@ func (ctl *UserController) DeleteMe(c *gin.Context) {
 // @Summary  list all users
 // @Tags     admin
 // @Produce  json
-// @Param    limit query int 10
-// @Param    offset query int 0 
+// @Param    limit query int false "limit (default 10)"
+// @Param    offset query int false "offset (default 0)"
 // @Success  200 {array} dtos.UserResponse
 // @Failure  403 {object} map[string]string
 // @Router   /api/v1/users [get]
@@ -102,7 +102,7 @@ func (ctl *UserController) GetAll(c *gin.Context) {
 // @Summary  get a user by id
 // @Tags     admin
 // @Produce  json
-// @Param    id string true "user id"
+// @Param    id path string true "user id"
 // @Success  200 {object} dtos.UserResponse
 // @Failure  403 {object} map[string]string
 // @Router   /api/v1/users/{id} [get]
@@ -120,8 +120,8 @@ func (ctl *UserController) GetByID(c *gin.Context) {
 // @Tags     admin
 // @Accept   json
 // @Produce  json
-// @Param    id string true "user id"
-// @Param    body dtos.UpdateRoleRequest true "new role"
+// @Param    id path string true "user id"
+// @Param    body body dtos.UpdateRoleRequest true "new role"
 // @Success  200 {object} dtos.UserResponse
 // @Failure  403 {object} map[string]string
 // @Router   /api/v1/users/{id} [patch]
@@ -142,7 +142,7 @@ func (ctl *UserController) UpdateRole(c *gin.Context) {
 // DeleteByID godoc
 // @Summary  delete a user
 // @Tags     admin
-// @Param    id string true "user id"
+// @Param    id path string true "user id"
 // @Success  204
 // @Failure  403 {object} map[string]string
 // @Router   /api/v1/users/{id} [delete]
