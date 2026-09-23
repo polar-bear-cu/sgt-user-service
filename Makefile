@@ -2,10 +2,9 @@ DB_URL ?= postgres://postgres:postgres@localhost:5434/users?sslmode=disable
 IMAGE ?= sgt-user-service
 PORT ?= 8082
 
-.PHONY: run test lint format tidy docs image container compose-up compose-down migrate-up migrate-down migrate-create
+.PHONY: run test lint format tidy image container compose-up compose-down migrate-up migrate-down migrate-create
 
 run:
-	swag init -g main.go -o docs --parseInternal
 	go run .
 
 test:
@@ -19,9 +18,6 @@ lint:
 
 tidy:
 	go mod tidy
-
-docs:
-	swag init -g main.go -o docs --parseInternal
 
 image:
 	docker build -t $(IMAGE) .
