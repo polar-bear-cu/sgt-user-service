@@ -90,6 +90,37 @@ func (s *UserServer) DeleteUser(
 	return &userv1.DeleteUserResponse{Success: true}, nil
 }
 
+func (s *UserServer) ListUsers(
+	ctx context.Context,
+	req *userv1.ListUsersRequest,
+) (*userv1.ListUsersResponse, error) {
+	callerID, _ := middlewares.UserIDFromContext(ctx)
+
+	users, err := s.uc.GetAll(ctx, callerID, int(req.GetLimit()), int(req.GetOffset()))
+	if err != nil {
+		return nil, err
+	}
+
+	resp := make([]*userv1.User, 0, len(users))
+	for _, u := range users {
+		resp = append(resp, toProto(u))
+	}
+	return &userv1.ListUsersResponse{Users: resp}, nil
+}
+
+func (s *UserServer) UpdateRole(
+	ctx context.Context,
+	req *userv1.UpdateRoleRequest,
+) (*userv1.UpdateRoleResponse, error) {
+	callerID, _ := middlewares.UserIDFromContext(ctx)
+
+	user, err := s.uc.UpdateRole(ctx, callerID, req.GetId(), req.GetRole())
+	if err != nil {
+		return nil, err
+	}
+	return &userv1.UpdateRoleResponse{User: toProto(user)}, nil
+}
+
 func toProto(u models.User) *userv1.User {
 	return &userv1.User{
 		Id:         u.ID,
