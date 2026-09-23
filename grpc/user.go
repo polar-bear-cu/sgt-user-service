@@ -72,6 +72,24 @@ func (s *UserServer) userByIDForCaller(ctx context.Context, targetID string) (mo
 	return s.uc.GetByIDAsAdmin(ctx, callerID, targetID)
 }
 
+func (s *UserServer) DeleteUser(
+	ctx context.Context,
+	req *userv1.DeleteUserRequest,
+) (*userv1.DeleteUserResponse, error) {
+	callerID, ok := middlewares.UserIDFromContext(ctx)
+
+	var err error
+	if !ok || callerID == req.GetId() {
+		err = s.uc.DeleteSelf(ctx, req.GetId())
+	} else {
+		err = s.uc.DeleteUser(ctx, callerID, req.GetId())
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &userv1.DeleteUserResponse{Success: true}, nil
+}
+
 func toProto(u models.User) *userv1.User {
 	return &userv1.User{
 		Id:         u.ID,
