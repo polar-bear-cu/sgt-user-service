@@ -19,6 +19,7 @@ import (
 	"github.com/polar-bear-cu/sgt-user-service/controllers"
 	_ "github.com/polar-bear-cu/sgt-user-service/docs"
 	grpcserver "github.com/polar-bear-cu/sgt-user-service/grpc"
+	"github.com/polar-bear-cu/sgt-user-service/middlewares"
 	"github.com/polar-bear-cu/sgt-user-service/repositories"
 	"github.com/polar-bear-cu/sgt-user-service/routes"
 	"github.com/polar-bear-cu/sgt-user-service/usecases"
@@ -46,7 +47,7 @@ func main() {
 	uc := usecases.NewUser(repo)
 	userCtrl := controllers.NewUser(uc)
 
-	gs, lis, err := newGRPCServer(ctx, cfg.GRPCPort, uc)
+	gs, lis, err := newGRPCServer(ctx, cfg.GRPCPort, cfg.JWTSecret, uc)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,14 +81,14 @@ func main() {
 	gs.GracefulStop()
 }
 
-func newGRPCServer(ctx context.Context, port string, uc *usecases.UserUsecase) (*grpclib.Server, net.Listener, error) {
+func newGRPCServer(ctx context.Context, port, jwtSecret string, uc *usecases.UserUsecase) (*grpclib.Server, net.Listener, error) {
 	var lc net.ListenConfig
 	lis, err := lc.Listen(ctx, "tcp", ":"+port)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	gs := grpclib.NewServer()
+	gs := grpclib.NewServer(grpclib.UnaryInterceptor(middlewares.GRPCAuth(jwtSecret)))
 	userv1.RegisterUserServiceServer(gs, grpcserver.NewUserServer(uc))
 	reflection.Register(gs)
 	return gs, lis, nil
