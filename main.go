@@ -16,8 +16,6 @@ import (
 
 	userv1 "github.com/polar-bear-cu/sgt-proto/gen/go/user/v1"
 	"github.com/polar-bear-cu/sgt-user-service/config"
-	"github.com/polar-bear-cu/sgt-user-service/controllers"
-	_ "github.com/polar-bear-cu/sgt-user-service/docs"
 	grpcserver "github.com/polar-bear-cu/sgt-user-service/grpc"
 	"github.com/polar-bear-cu/sgt-user-service/middlewares"
 	"github.com/polar-bear-cu/sgt-user-service/repositories"
@@ -25,9 +23,6 @@ import (
 	"github.com/polar-bear-cu/sgt-user-service/usecases"
 )
 
-// @title        User Service API
-// @version      1.0
-// @description  REST API for the Subglutee user service
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
@@ -45,7 +40,6 @@ func main() {
 
 	repo := repositories.NewUserPostgres(pool)
 	uc := usecases.NewUser(repo)
-	userCtrl := controllers.NewUser(uc)
 
 	gs, lis, err := newGRPCServer(ctx, cfg.GRPCPort, cfg.JWTSecret, uc)
 	if err != nil {
@@ -59,7 +53,7 @@ func main() {
 	}()
 
 	r := gin.Default()
-	routes.Register(r, userCtrl, cfg.JWTSecret, cfg.SwaggerEnabled)
+	routes.Register(r)
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: r}
 
 	go func() {

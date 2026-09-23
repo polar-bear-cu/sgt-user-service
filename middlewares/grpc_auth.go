@@ -11,6 +11,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type accessClaims struct {
+	jwt.RegisteredClaims
+}
+
 type ctxKey string
 
 const userIDKey ctxKey = "user_id"
