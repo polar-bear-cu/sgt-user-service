@@ -4,8 +4,11 @@ import (
 	"context"
 
 	userv1 "github.com/polar-bear-cu/sgt-proto/gen/go/user/v1"
+	"github.com/polar-bear-cu/sgt-user-service/middlewares"
 	"github.com/polar-bear-cu/sgt-user-service/models"
 	"github.com/polar-bear-cu/sgt-user-service/usecases"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type UserServer struct {
@@ -35,7 +38,11 @@ func (s *UserServer) UpdateProfile(
 	ctx context.Context,
 	req *userv1.UpdateProfileRequest,
 ) (*userv1.UpdateProfileResponse, error) {
-	user, err := s.uc.GetByID(ctx, req.GetId())
+	if callerID, ok := middlewares.UserIDFromContext(ctx); ok && callerID != req.GetId() {
+		return nil, status.Error(codes.PermissionDenied, "cannot update another user's profile")
+	}
+
+	user, err := s.uc.UpdateProfile(ctx, req.GetId(), req.GetDisplayName(), req.GetPictureUrl())
 	if err != nil {
 		return nil, err
 	}
@@ -48,13 +55,21 @@ func (s *UserServer) GetUser(
 	ctx context.Context,
 	req *userv1.GetUserRequest,
 ) (*userv1.GetUserResponse, error) {
-	user, err := s.uc.GetByID(ctx, req.GetId())
+	user, err := s.userByIDForCaller(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	return &userv1.GetUserResponse{
 		User: toProto(user),
 	}, nil
+}
+
+func (s *UserServer) userByIDForCaller(ctx context.Context, targetID string) (models.User, error) {
+	callerID, ok := middlewares.UserIDFromContext(ctx)
+	if !ok || callerID == targetID {
+		return s.uc.GetByID(ctx, targetID)
+	}
+	return s.uc.GetByIDAsAdmin(ctx, callerID, targetID)
 }
 
 func toProto(u models.User) *userv1.User {
