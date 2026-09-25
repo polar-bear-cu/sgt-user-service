@@ -96,7 +96,10 @@ func (s *UserServer) ListUsers(
 	ctx context.Context,
 	req *userv1.ListUsersRequest,
 ) (*userv1.ListUsersResponse, error) {
-	callerID, _ := middlewares.UserIDFromContext(ctx)
+	callerID, ok := middlewares.UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing token")
+	}
 
 	users, err := s.uc.GetAll(ctx, callerID, int(req.GetLimit()), int(req.GetOffset()))
 	if err != nil {
@@ -114,7 +117,10 @@ func (s *UserServer) UpdateRole(
 	ctx context.Context,
 	req *userv1.UpdateRoleRequest,
 ) (*userv1.UpdateRoleResponse, error) {
-	callerID, _ := middlewares.UserIDFromContext(ctx)
+	callerID, ok := middlewares.UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing token")
+	}
 
 	user, err := s.uc.UpdateRole(ctx, callerID, req.GetId(), req.GetRole())
 	if err != nil {
