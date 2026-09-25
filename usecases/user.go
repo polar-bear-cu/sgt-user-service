@@ -9,6 +9,7 @@ import (
 )
 
 var ErrForbidden = errors.New("admin only")
+var ErrUnauthenticated = errors.New("unauthenticated")
 
 type UserUsecase struct {
 	repo repositories.UserRepository
@@ -61,6 +62,9 @@ func (u *UserUsecase) DeleteSelf(ctx context.Context, callerID string) error {
 }
 
 func (u *UserUsecase) requireAdmin(ctx context.Context, callerID string) error {
+	if callerID == "" {
+		return ErrUnauthenticated
+	}
 	caller, err := u.repo.FindByID(ctx, callerID)
 	if err != nil {
 		return err
@@ -74,6 +78,12 @@ func (u *UserUsecase) requireAdmin(ctx context.Context, callerID string) error {
 func (u *UserUsecase) GetAll(ctx context.Context, callerID string, limit, offset int) ([]models.User, error) {
 	if err := u.requireAdmin(ctx, callerID); err != nil {
 		return nil, err
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	if offset <= 0 {
+		offset = 0
 	}
 	return u.repo.FindAll(ctx, limit, offset)
 }
