@@ -2,10 +2,12 @@ package grpc
 
 import (
 	"context"
+	"errors"
 
 	userv1 "github.com/polar-bear-cu/sgt-proto/gen/go/user/v1"
 	"github.com/polar-bear-cu/sgt-user-service/middlewares"
 	"github.com/polar-bear-cu/sgt-user-service/models"
+	"github.com/polar-bear-cu/sgt-user-service/repositories"
 	"github.com/polar-bear-cu/sgt-user-service/usecases"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -44,7 +46,7 @@ func (s *UserServer) UpdateProfile(
 
 	user, err := s.uc.UpdateProfile(ctx, req.GetId(), req.GetDisplayName(), req.GetPictureUrl())
 	if err != nil {
-		return nil, err
+		return nil, toGRPCError(err)
 	}
 	return &userv1.UpdateProfileResponse{
 		User: toProto(user),
@@ -57,7 +59,7 @@ func (s *UserServer) GetUser(
 ) (*userv1.GetUserResponse, error) {
 	user, err := s.userByIDForCaller(ctx, req.GetId())
 	if err != nil {
-		return nil, err
+		return nil, toGRPCError(err)
 	}
 	return &userv1.GetUserResponse{
 		User: toProto(user),
@@ -85,7 +87,7 @@ func (s *UserServer) DeleteUser(
 		err = s.uc.DeleteUser(ctx, callerID, req.GetId())
 	}
 	if err != nil {
-		return nil, err
+		return nil, toGRPCError(err)
 	}
 	return &userv1.DeleteUserResponse{Success: true}, nil
 }
@@ -98,7 +100,7 @@ func (s *UserServer) ListUsers(
 
 	users, err := s.uc.GetAll(ctx, callerID, int(req.GetLimit()), int(req.GetOffset()))
 	if err != nil {
-		return nil, err
+		return nil, toGRPCError(err)
 	}
 
 	resp := make([]*userv1.User, 0, len(users))
@@ -116,9 +118,22 @@ func (s *UserServer) UpdateRole(
 
 	user, err := s.uc.UpdateRole(ctx, callerID, req.GetId(), req.GetRole())
 	if err != nil {
-		return nil, err
+		return nil, toGRPCError(err)
 	}
 	return &userv1.UpdateRoleResponse{User: toProto(user)}, nil
+}
+
+func toGRPCError(err error) error {
+	switch {
+	case errors.Is(err, usecases.ErrUnauthenticated):
+		return status.Error(codes.Unauthenticated, err.Error())
+	case errors.Is(err, usecases.ErrForbidden):
+		return status.Error(codes.PermissionDenied, err.Error())
+	case errors.Is(err, repositories.ErrUserNotFound):
+		return status.Error(codes.NotFound, err.Error())
+	default:
+		return err
+	}
 }
 
 func toProto(u models.User) *userv1.User {
