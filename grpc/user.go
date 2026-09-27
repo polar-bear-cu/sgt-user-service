@@ -148,5 +148,6 @@ func toProto(u models.User) *userv1.User {
 		Email:      u.Email,
 		Name:       u.DisplayName,
 		PictureUrl: u.PictureURL,
+		Role:       u.Role,
 	}
 }
