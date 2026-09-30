@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"time"
 
 	userv1 "github.com/polar-bear-cu/sgt-proto/gen/go/user/v1"
 	"github.com/polar-bear-cu/sgt-user-service/middlewares"
@@ -144,9 +145,12 @@ func toGRPCError(err error) error {
 
 func toProto(u models.User) *userv1.User {
 	return &userv1.User{
-		Id:         u.ID,
-		Email:      u.Email,
-		Name:       u.DisplayName,
-		PictureUrl: u.PictureURL,
+		Id:             u.ID,
+		Email:          u.Email,
+		Name:           u.DisplayName,
+		PictureUrl:     u.PictureURL,
+		CreatedAt:      u.CreatedAt.Format(time.RFC3339),
+		LastLoginAt:    u.LastLoginAt.Format(time.RFC3339),
+		TimeInAdvanced: u.TimeInAdvanced,
 	}
 }
