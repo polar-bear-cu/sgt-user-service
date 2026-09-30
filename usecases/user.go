@@ -39,7 +39,11 @@ func (u *UserUsecase) FindOrCreate(
 ) (models.User, bool, error) {
 	existing, err := u.repo.FindByGoogleSub(ctx, googleSub)
 	if err == nil {
-		return existing, false, nil
+		updated, err := u.repo.UpdateLastLogin(ctx, existing.ID)
+		if err != nil {
+			return models.User{}, false, err
+		}
+		return updated, false, nil
 	}
 	if !errors.Is(err, repositories.ErrUserNotFound) {
 		return models.User{}, false, err
