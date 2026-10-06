@@ -44,7 +44,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer subConn.Close()
+	defer func() { _ = subConn.Close() }()
 
 	repo := repositories.NewUserPostgres(pool)
 	uc := usecases.NewUser(repo, subscriptionv1.NewSubscriptionServiceClient(subConn))
