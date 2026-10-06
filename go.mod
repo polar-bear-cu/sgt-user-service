@@ -7,7 +7,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/joho/godotenv v1.5.1
-	github.com/polar-bear-cu/sgt-proto v0.3.1-0.20260930103235-792f91ff6e4f
+	github.com/polar-bear-cu/sgt-proto v0.4.0
 	google.golang.org/grpc v1.83.2
 )
 
