@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	subscriptionv1 "github.com/polar-bear-cu/sgt-proto/gen/go/subscription/v1"
 	"github.com/polar-bear-cu/sgt-user-service/models"
 	"github.com/polar-bear-cu/sgt-user-service/repositories"
 )
@@ -13,10 +14,11 @@ var ErrUnauthenticated = errors.New("unauthenticated")
 
 type UserUsecase struct {
 	repo repositories.UserRepository
+	subs subscriptionv1.SubscriptionServiceClient
 }
 
-func NewUser(repo repositories.UserRepository) *UserUsecase {
-	return &UserUsecase{repo: repo}
+func NewUser(repo repositories.UserRepository, subs subscriptionv1.SubscriptionServiceClient) *UserUsecase {
+	return &UserUsecase{repo: repo, subs: subs}
 }
 
 func (u *UserUsecase) GetByID(ctx context.Context, id string) (models.User, error) {
@@ -62,6 +64,10 @@ func (u *UserUsecase) FindOrCreate(
 }
 
 func (u *UserUsecase) DeleteSelf(ctx context.Context, callerID string) error {
+	_, err := u.subs.DeleteSubscriptionsByUser(ctx, &subscriptionv1.DeleteSubscriptionsByUserRequest{UserId: callerID})
+	if err != nil {
+		return err
+	}
 	return u.repo.Delete(ctx, callerID)
 }
 
@@ -108,6 +114,10 @@ func (u *UserUsecase) UpdateRole(ctx context.Context, callerID, targetID, role s
 
 func (u *UserUsecase) DeleteUser(ctx context.Context, callerID, targetID string) error {
 	if err := u.requireAdmin(ctx, callerID); err != nil {
+		return err
+	}
+	_, err := u.subs.DeleteSubscriptionsByUser(ctx, &subscriptionv1.DeleteSubscriptionsByUserRequest{UserId: targetID})
+	if err != nil {
 		return err
 	}
 	return u.repo.Delete(ctx, targetID)
