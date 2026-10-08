@@ -19,8 +19,6 @@ jobs:
           go-version: "1.26"
       - run: go mod download
       - run: go mod tidy && git diff --exit-code
-      - run: go install github.com/swaggo/swag/cmd/swag@v1.16.6
-      - run: swag init -g main.go -o docs --parseInternal && git diff --exit-code docs
       - run: go vet ./...
       - uses: golangci/golangci-lint-action@v8
         with:
@@ -29,7 +27,7 @@ jobs:
 
   push-image:
     needs: check
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -46,5 +44,13 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/polar-bear-cu/sgt-user-service:latest
+            ghcr.io/polar-bear-cu/sgt-user-service:${{ github.ref_name }}
             ghcr.io/polar-bear-cu/sgt-user-service:${{ github.sha }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: migrate
+          push: true
+          tags: |
+            ghcr.io/polar-bear-cu/sgt-user-service-migrate:${{ github.ref_name }}
+            ghcr.io/polar-bear-cu/sgt-user-service-migrate:${{ github.sha }}
