@@ -12,8 +12,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	grpclib "google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
+	subscriptionv1 "github.com/polar-bear-cu/sgt-proto/gen/go/subscription/v1"
 	userv1 "github.com/polar-bear-cu/sgt-proto/gen/go/user/v1"
 	"github.com/polar-bear-cu/sgt-user-service/config"
 	grpcserver "github.com/polar-bear-cu/sgt-user-service/grpc"
@@ -38,8 +40,14 @@ func main() {
 	}
 	defer pool.Close()
 
+	subConn, err := grpclib.NewClient(cfg.SubscriptionAddr, grpclib.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() { _ = subConn.Close() }()
+
 	repo := repositories.NewUserPostgres(pool)
-	uc := usecases.NewUser(repo)
+	uc := usecases.NewUser(repo, subscriptionv1.NewSubscriptionServiceClient(subConn))
 
 	gs, lis, err := newGRPCServer(ctx, cfg.GRPCPort, cfg.JWTSecret, uc)
 	if err != nil {
