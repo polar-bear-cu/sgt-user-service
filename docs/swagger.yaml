@@ -1,0 +1,26 @@
+definitions:
+  dtos.HealthResponse:
+    properties:
+      serviceName:
+        type: string
+      status:
+        type: string
+      timestamp:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.HealthResponse'
+      summary: health check
+      tags:
+      - ops
+swagger: "2.0"
