@@ -11,6 +11,10 @@ import (
 
 var ErrForbidden = errors.New("admin only")
 var ErrUnauthenticated = errors.New("unauthenticated")
+var ErrInvalidTimeInAdvanced = errors.New("time_in_advanced must be at least 1 day")
+var ErrUnsupportedCurrency = errors.New("unsupported currency")
+
+var currencies = map[string]bool{"THB": true}
 
 type UserUsecase struct {
 	repo repositories.UserRepository
@@ -25,13 +29,30 @@ func (u *UserUsecase) GetByID(ctx context.Context, id string) (models.User, erro
 	return u.repo.FindByID(ctx, id)
 }
 
-func (u *UserUsecase) UpdateProfile(ctx context.Context, id, displayName, pictureURL string) (models.User, error) {
+func (u *UserUsecase) UpdateProfile(
+	ctx context.Context,
+	id, displayName, pictureURL string,
+	timeInAdvanced *int32,
+	currency *string,
+) (models.User, error) {
+	if timeInAdvanced != nil && *timeInAdvanced < 1 {
+		return models.User{}, ErrInvalidTimeInAdvanced
+	}
+	if currency != nil && !currencies[*currency] {
+		return models.User{}, ErrUnsupportedCurrency
+	}
 	current, err := u.repo.FindByID(ctx, id)
 	if err != nil {
 		return models.User{}, err
 	}
 	current.DisplayName = displayName
 	current.PictureURL = pictureURL
+	if timeInAdvanced != nil {
+		current.TimeInAdvanced = *timeInAdvanced
+	}
+	if currency != nil {
+		current.Currency = *currency
+	}
 	return u.repo.Update(ctx, current)
 }
 
