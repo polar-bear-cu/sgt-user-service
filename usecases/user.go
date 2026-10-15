@@ -16,13 +16,22 @@ var ErrUnsupportedCurrency = errors.New("unsupported currency")
 
 var currencies = map[string]bool{"THB": true}
 
-type UserUsecase struct {
-	repo repositories.UserRepository
-	subs subscriptionv1.SubscriptionServiceClient
+type UserDeletedPublisher interface {
+	PublishUserDeleted(ctx context.Context, userID, email string) error
 }
 
-func NewUser(repo repositories.UserRepository, subs subscriptionv1.SubscriptionServiceClient) *UserUsecase {
-	return &UserUsecase{repo: repo, subs: subs}
+type UserUsecase struct {
+	repo   repositories.UserRepository
+	subs   subscriptionv1.SubscriptionServiceClient
+	events UserDeletedPublisher
+}
+
+func NewUser(
+	repo repositories.UserRepository,
+	subs subscriptionv1.SubscriptionServiceClient,
+	events UserDeletedPublisher,
+) *UserUsecase {
+	return &UserUsecase{repo: repo, subs: subs, events: events}
 }
 
 func (u *UserUsecase) GetByID(ctx context.Context, id string) (models.User, error) {
@@ -85,11 +94,22 @@ func (u *UserUsecase) FindOrCreate(
 }
 
 func (u *UserUsecase) DeleteSelf(ctx context.Context, callerID string) error {
-	_, err := u.subs.DeleteSubscriptionsByUser(ctx, &subscriptionv1.DeleteSubscriptionsByUserRequest{UserId: callerID})
+	return u.deleteAccount(ctx, callerID)
+}
+
+func (u *UserUsecase) deleteAccount(ctx context.Context, id string) error {
+	user, err := u.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
 	}
-	return u.repo.Delete(ctx, callerID)
+	if err := u.events.PublishUserDeleted(ctx, user.ID, user.Email); err != nil {
+		return err
+	}
+	_, err = u.subs.DeleteSubscriptionsByUser(ctx, &subscriptionv1.DeleteSubscriptionsByUserRequest{UserId: id})
+	if err != nil {
+		return err
+	}
+	return u.repo.Delete(ctx, id)
 }
 
 func (u *UserUsecase) requireAdmin(ctx context.Context, callerID string) error {
@@ -137,9 +157,5 @@ func (u *UserUsecase) DeleteUser(ctx context.Context, callerID, targetID string)
 	if err := u.requireAdmin(ctx, callerID); err != nil {
 		return err
 	}
-	_, err := u.subs.DeleteSubscriptionsByUser(ctx, &subscriptionv1.DeleteSubscriptionsByUserRequest{UserId: targetID})
-	if err != nil {
-		return err
-	}
-	return u.repo.Delete(ctx, targetID)
+	return u.deleteAccount(ctx, targetID)
 }

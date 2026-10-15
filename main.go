@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	amqp "github.com/rabbitmq/amqp091-go"
 	grpclib "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -20,6 +21,7 @@ import (
 	"github.com/polar-bear-cu/sgt-user-service/config"
 	grpcserver "github.com/polar-bear-cu/sgt-user-service/grpc"
 	"github.com/polar-bear-cu/sgt-user-service/middlewares"
+	"github.com/polar-bear-cu/sgt-user-service/publisher"
 	"github.com/polar-bear-cu/sgt-user-service/repositories"
 	"github.com/polar-bear-cu/sgt-user-service/routes"
 	"github.com/polar-bear-cu/sgt-user-service/usecases"
@@ -46,8 +48,20 @@ func main() {
 	}
 	defer func() { _ = subConn.Close() }()
 
+	rmqConn, err := config.ConnectRabbitMQ(cfg.RabbitMQURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() { _ = rmqConn.Close() }()
+	rmqClosed := rmqConn.NotifyClose(make(chan *amqp.Error, 1))
+
+	pub, err := publisher.NewRabbitMQPublisher(rmqConn)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	repo := repositories.NewUserPostgres(pool)
-	uc := usecases.NewUser(repo, subscriptionv1.NewSubscriptionServiceClient(subConn))
+	uc := usecases.NewUser(repo, subscriptionv1.NewSubscriptionServiceClient(subConn), pub)
 
 	gs, lis, err := newGRPCServer(ctx, cfg.GRPCPort, cfg.JWTSecret, uc)
 	if err != nil {
@@ -71,7 +85,11 @@ func main() {
 		}
 	}()
 
-	<-ctx.Done()
+	select {
+	case <-ctx.Done():
+	case amqpErr := <-rmqClosed:
+		log.Fatalf("rabbitmq connection closed: %v", amqpErr)
+	}
 	stop()
 	log.Println("shutting down")
 

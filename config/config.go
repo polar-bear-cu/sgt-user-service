@@ -12,6 +12,7 @@ type Config struct {
 	GRPCPort         string
 	JWTSecret        string
 	SubscriptionAddr string
+	RabbitMQURL      string
 	DB               DBConfig
 }
 
@@ -29,6 +30,7 @@ func Load() (*Config, error) {
 		GRPCPort:         env("GRPC_PORT", "50052"),
 		JWTSecret:        os.Getenv("JWT_SECRET"),
 		SubscriptionAddr: env("SUBSCRIPTION_SERVICE_ADDR", "localhost:50051"),
+		RabbitMQURL:      env("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
 		DB: DBConfig{
 			Host:     env("DB_HOST", "localhost"),
 			Port:     env("DB_PORT", "5434"),
