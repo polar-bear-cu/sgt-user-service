@@ -8,6 +8,7 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/joho/godotenv v1.5.1
 	github.com/polar-bear-cu/sgt-proto v0.5.1
+	github.com/rabbitmq/amqp091-go v1.14.0
 	github.com/swaggo/swag v1.16.6
 	google.golang.org/grpc v1.83.2
 )

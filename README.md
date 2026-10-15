@@ -5,6 +5,7 @@ REST + gRPC service สำหรับจัดการ user profile
 - REST `:8082` - frontend/gateway (`/api/v1/users/me`)
 - gRPC `:50052` - auth-service (`FindOrCreateUser` ตอน Google login)
 - Postgres - เก็บ user
+- RabbitMQ - ตอนลบบัญชี publish `{user_id, email}` ไป queue `user_deleted` ก่อนลบ user ให้ noti-service ลบ notification ของ user นั้น (ต้องมี RabbitMQ ที่ `RABBITMQ_URL` ถึงจะ start ได้ ใช้ stack ของ sgt-deploy) ถ้า publish ไม่สำเร็จจะไม่ลบอะไรและคืน error, ถ้า connection หลุด service จะ exit ให้ Docker start ใหม่
 
 ### Structure
 
@@ -16,7 +17,8 @@ repositories/   db query
 grpc/           gRPC controllers
 dtos/           request/response struct
 models/         db struct
-config/         env loader + db pool
+publisher/      RabbitMQ publisher (user_deleted)
+config/         env loader + db pool + RabbitMQ connection
 migrations/     sql migration
 ```
 
