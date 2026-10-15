@@ -12,6 +12,7 @@ type User struct {
 	CreatedAt      time.Time
 	LastLoginAt    time.Time
 	TimeInAdvanced int32
+	Currency       string
 }
 
 const (

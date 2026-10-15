@@ -45,7 +45,9 @@ func (s *UserServer) UpdateProfile(
 		return nil, status.Error(codes.PermissionDenied, "cannot update another user's profile")
 	}
 
-	user, err := s.uc.UpdateProfile(ctx, req.GetId(), req.GetDisplayName(), req.GetPictureUrl())
+	user, err := s.uc.UpdateProfile(
+		ctx, req.GetId(), req.GetDisplayName(), req.GetPictureUrl(), req.TimeInAdvanced, req.Currency,
+	)
 	if err != nil {
 		return nil, toGRPCError(err)
 	}
@@ -138,6 +140,8 @@ func toGRPCError(err error) error {
 		return status.Error(codes.PermissionDenied, err.Error())
 	case errors.Is(err, repositories.ErrUserNotFound):
 		return status.Error(codes.NotFound, err.Error())
+	case errors.Is(err, usecases.ErrInvalidTimeInAdvanced), errors.Is(err, usecases.ErrUnsupportedCurrency):
+		return status.Error(codes.InvalidArgument, err.Error())
 	default:
 		return err
 	}
@@ -153,5 +157,6 @@ func toProto(u models.User) *userv1.User {
 		CreatedAt:      u.CreatedAt.Format(time.RFC3339),
 		LastLoginAt:    u.LastLoginAt.Format(time.RFC3339),
 		TimeInAdvanced: u.TimeInAdvanced,
+		Currency:       u.Currency,
 	}
 }
